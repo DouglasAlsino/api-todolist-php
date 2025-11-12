@@ -1,0 +1,13 @@
+# Ativa o motor de reescrita
+RewriteEngine On
+
+# Condição: Se a requisição NÃO for um arquivo existente
+RewriteCond %{REQUEST_FILENAME} !-f
+# Condição: Se a requisição NÃO for um diretório existente
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Regra: Redireciona tudo (.*) para o index.php,
+# passando o caminho original como um parâmetro de query chamado "path"
+# [QSA] = Anexa qualquer query string original (ex: ?status=pendente)
+# [L] = Última regra a ser processada
+RewriteRule ^(.*)$ index.php?path=$1 [QSA,L]

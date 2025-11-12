@@ -1,0 +1,59 @@
+### Define a variável de base para o WAMP
+@baseUrl = http://localhost/ToDoList
+
+### =================
+### USUARIOS
+### =================
+
+### (Teste 1) Listar todos usuários (GET)
+# (Deve retornar Ana e Bruno do setup.db)
+GET {{baseUrl}}/api/usuarios
+
+### (Teste 2) Criar um usuário (POST)
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+
+{
+    "nome": "Carlos Jorge",
+    "email": "carlos.jorge@email.com"
+}
+
+### (Teste 3) Listar todos usuários (GET)
+# (Deve agora mostrar Ana, Bruno e Carlos)
+GET {{baseUrl}}/api/usuarios
+
+### (Teste 4) Tentar criar usuário com e-mail duplicado (POST - Erro 409)
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+
+{
+    "nome": "Carlos Repetido",
+    "email": "carlos.jorge@email.com"
+}
+
+### (Teste 5) Buscar o usuário criado (ID 3) (GET)
+GET {{baseUrl}}/api/usuarios/3
+
+### (Teste 6) Atualizar usuário 3 (PUT)
+PUT {{baseUrl}}/api/usuarios/3
+Content-Type: application/json
+
+{
+    "nome": "Carlos Jorge Alterado",
+    "email": "carlos.alterado@email.com"
+}
+
+### (Teste 7) Buscar usuário 3 novamente (GET)
+# (Deve mostrar o nome e e-mail alterados)
+GET {{baseUrl}}/api/usuarios/3
+
+### (Teste 8) Deletar usuário 3 (DELETE)
+DELETE {{baseUrl}}/api/usuarios/3
+
+### (Teste 9) Buscar usuário 3 (GET - Erro 404)
+# (Deve retornar "Usuário não encontrado")
+GET {{baseUrl}}/api/usuarios/3
+
+### (Teste 10) Listar todos usuários (GET)
+# (Deve mostrar apenas Ana e Bruno novamente)
+GET {{baseUrl}}/api/usuarios

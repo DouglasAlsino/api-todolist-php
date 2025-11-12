@@ -1,0 +1,10 @@
+{
+    "name": "dougl/todolist",
+    "description": "API de Tarefas para Backend 2",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "require": {}
+}
