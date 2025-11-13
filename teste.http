@@ -57,3 +57,98 @@ GET {{baseUrl}}/api/usuarios/3
 ### (Teste 10) Listar todos usuários (GET)
 # (Deve mostrar apenas Ana e Bruno novamente)
 GET {{baseUrl}}/api/usuarios
+
+### =================
+### TAREFAS
+### =================
+
+### (Teste 11) Listar todas tarefas (GET)
+# (Deve retornar as 4 tarefas do setup.db)
+GET {{baseUrl}}/api/tarefas
+
+### (Teste 12) Listar tarefas com FILTRO de status (GET)
+# (REQUISITO: Filtro na querystring)
+# (Deve retornar 'Estudar PHP' e 'Ler documentação')
+GET {{baseUrl}}/api/tarefas?status=pendente
+
+### (Teste 13) Criar tarefa para usuário 1 (POST)
+POST {{baseUrl}}/api/tarefas
+Content-Type: application/json
+
+{
+    "titulo": "Comprar pão",
+    "descricao": "Na padaria da esquina",
+    "usuario_id": 1
+}
+
+### (Teste 14) Buscar a tarefa recém-criada (ID 5) (GET)
+GET {{baseUrl}}/api/tarefas/5
+
+### (Teste 15) Atualizar (PATCH) o status da tarefa 5 (PATCH)
+# (REQUISITO: Método PATCH)
+PATCH {{baseUrl}}/api/tarefas/5
+Content-Type: application/json
+
+{
+    "status": "concluida"
+}
+
+### (Teste 16) Buscar tarefa 5 e verificar status (GET)
+GET {{baseUrl}}/api/tarefas/5
+
+### (Teste 17) Atualizar (PUT) a tarefa 5 (PUT)
+# (PUT exige todos os campos)
+PUT {{baseUrl}}/api/tarefas/5
+Content-Type: application/json
+
+{
+    "titulo": "Comprar pão (Atualizado)",
+    "descricao": "Na padaria da esquina (agora concluído)",
+    "status": "concluida",
+    "usuario_id": 2 
+}
+
+### (Teste 18) Deletar tarefa 5 (DELETE)
+DELETE {{baseUrl}}/api/tarefas/5
+
+### (Teste 19) Buscar tarefa 5 (GET - Erro 404)
+GET {{baseUrl}}/api/tarefas/5
+
+### =================
+### ROTAS RELACIONADAS
+### =================
+
+### (Teste 20) Listar tarefas da usuária Ana (ID 1) (GET)
+# (REQUISITO: Rota /api/usuarios/{id}/tarefas)
+# (Deve listar 'Estudar PHP', 'Fazer trabalho' e 'Ler documentação')
+GET {{baseUrl}}/api/usuarios/1/tarefas
+
+### (Teste 21) Listar tarefas do usuário Bruno (ID 2) (GET)
+# (Deve listar 'Ir ao mercado')
+GET {{baseUrl}}/api/usuarios/2/tarefas
+
+### =================
+### TESTES DE ERRO (Tarefas)
+### =================
+
+### (Erro 22) Criar tarefa com usuário inexistente (POST - Erro 404)
+POST {{baseUrl}}/api/tarefas
+Content-Type: application/json
+
+{
+    "titulo": "Tarefa Fantasma",
+    "usuario_id": 999
+}
+
+### (Erro 23) Criar tarefa com status inválido (POST - Erro 400)
+POST {{baseUrl}}/api/tarefas
+Content-Type: application/json
+
+{
+    "titulo": "Tarefa com status errado",
+    "usuario_id": 1,
+    "status": "atrasada"
+}
+
+### (Erro 24) Filtro de status inválido (GET - Erro 400)
+GET {{baseUrl}}/api/tarefas?status=em_progresso

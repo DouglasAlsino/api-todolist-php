@@ -1,24 +1,24 @@
 <?php
-// Exibe erros (bom para desenvolvimento)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// -------------------------------------------------------------------------
-// AUTOLOAD (Carrega todas as nossas classes 'App\...')
-// -------------------------------------------------------------------------
 require __DIR__ . '/vendor/autoload.php';
 
 // -------------------------------------------------------------------------
-// --- NOVO: IMPORTAÇÃO DAS CLASSES (Use statements) ---
+// IMPORTAÇÃO DAS CLASSES (Use statements)
 // -------------------------------------------------------------------------
-// Usamos 'use' para não precisar escrever o caminho completo da classe
 use App\Config\Database;
+// --- USUARIO ---
 use App\Repositories\UsuarioRepository;
 use App\Services\UsuarioService;
 use App\Controllers\UsuarioController;
+// --- TAREFA (NOVO) ---
+use App\Repositories\TarefaRepository;
+use App\Services\TarefaService;
+use App\Controllers\TarefaController;
 
 // -------------------------------------------------------------------------
-// FUNÇÃO HELPER PARA RESPOSTAS JSON
+// FUNÇÃO HELPER
 // -------------------------------------------------------------------------
 function json_response($data = null, $statusCode = 200) {
     header('Content-Type: application/json');
@@ -30,27 +30,23 @@ function json_response($data = null, $statusCode = 200) {
 }
 
 // -------------------------------------------------------------------------
-// --- NOVO: INJEÇÃO DE DEPENDÊNCIA (C-S-R) ---
+// INJEÇÃO DE DEPENDÊNCIA (C-S-R)
 // -------------------------------------------------------------------------
-// Aqui nós "montamos" a aplicação, injetando as dependências
-// da camada mais interna para a mais externa (Repo -> Service -> Controller)
 
-// 1. Pega a conexão PDO (Camada de Config)
+// 1. Pega a conexão PDO
 $pdo = Database::getConnection();
 
-// 2. Cria o Repository, injetando o PDO
+// 2. Monta as dependências de Usuario
 $usuarioRepository = new UsuarioRepository($pdo);
-
-// 3. Cria o Service, injetando o Repository
 $usuarioService = new UsuarioService($usuarioRepository);
-
-// 4. Cria o Controller, injetando o Service
 $usuarioController = new UsuarioController($usuarioService);
 
-// (Quando fizermos as Tarefas, faremos a mesma coisa para elas aqui)
-// $tarefaRepository = ...
-// $tarefaService = ...
-// $tarefaController = ...
+// 3. Monta as dependências de Tarefa (NOVO)
+$tarefaRepository = new TarefaRepository($pdo);
+// Note que o TarefaService recebe DOIS repositórios
+$tarefaService = new TarefaService($tarefaRepository, $usuarioRepository);
+$tarefaController = new TarefaController($tarefaService);
+
 
 // -------------------------------------------------------------------------
 // CAPTURA DA REQUISIÇÃO
@@ -63,26 +59,36 @@ $resource = $path[0];
 // -------------------------------------------------------------------------
 // ROTEAMENTO
 // -------------------------------------------------------------------------
+
+// --- NOVO (ROTA RELACIONADA) ---
+// Tratamento especial para /api/usuarios/{id}/tarefas
+// $path[0] = 'api', $path[1] = 'usuarios', $path[2] = {id}, $path[3] = 'tarefas'
+if ($resource === 'api' && 
+    isset($path[1]) && $path[1] === 'usuarios' && 
+    isset($path[2]) && is_numeric($path[2]) && // Garante que o {id} é numérico
+    isset($path[3]) && $path[3] === 'tarefas') 
+{
+    if ($method === 'GET') {
+        $usuarioId = (int)$path[2];
+        $tarefaController->getByUsuarioId($usuarioId); // Chama o método do TarefaController
+    } else {
+        json_response(['erro' => 'Método não permitido para este endpoint.'], 405);
+    }
+    // A execução para aqui, pois já encontramos a rota
+    exit;
+}
+
+
+// --- ROTEADOR PRINCIPAL (Atualizado) ---
 switch ($resource) {
 
     // Rota: / (Apresentação)
     case '':
+        // ... (coloque o código do Passo 3 aqui, com a lista de rotas) ...
         if ($method === 'GET') {
-            $apiInfo = [
-                'autores' => [
-                    ['nome' => 'Seu Nome Aqui', 'email' => 'seu.email@aqui.com']
-                ],
-                'descricao' => 'API de Sistema de Tarefas (ToDo List) - Trabalho de Backend 2.',
-                'rotas' => [
-                    // ... (copie a lista de rotas do Passo 3 aqui) ...
-                    ['metodo' => 'GET', 'caminho' => '/'],
-                    ['metodo' => 'GET', 'caminho' => '/api/usuarios'],
-                    // ... etc ...
-                ]
-            ];
-            json_response($apiInfo, 200);
+            json_response(['mensagem' => 'API de Tarefas. Acesse a rota / para ver a documentação.'], 200);
         } else {
-            json_response(['erro' => 'Método não permitido para a raiz'], 405);
+            json_response(['erro' => 'Método não permitido'], 405);
         }
         break;
 
@@ -92,55 +98,62 @@ switch ($resource) {
 
         switch ($apiResource) {
             
-            // --- ATUALIZADO: Rota /api/usuarios ---
+            // Rota /api/usuarios
             case 'usuarios':
-                // Pega o ID da URL, se existir (ex: /api/usuarios/1)
-                // (int) converte o ID para inteiro por segurança
                 $id = isset($path[2]) ? (int)$path[2] : null;
+                // Evita que a rota /api/usuarios/{id}/tarefas caia aqui
+                if (isset($path[3])) { 
+                    json_response(['erro' => 'Rota não encontrada.'], 404);
+                    break;
+                }
 
-                // Direciona para o método correto do Controller baseado no Método HTTP
                 switch ($method) {
                     case 'GET':
-                        if ($id) {
-                            $usuarioController->getById($id);
-                        } else {
-                            $usuarioController->getAll();
-                        }
+                        $id ? $usuarioController->getById($id) : $usuarioController->getAll();
                         break;
                     case 'POST':
-                        // POST só pode ser na coleção (sem ID)
-                        if ($id) {
-                            json_response(['erro' => 'Não é possível criar com ID.'], 400);
-                        } else {
-                            $usuarioController->create();
-                        }
+                        $id ? json_response(['erro' => 'POST não permitido com ID'], 400) : $usuarioController->create();
                         break;
                     case 'PUT':
-                        // PUT deve ter um ID
-                        if ($id) {
-                            $usuarioController->update($id);
-                        } else {
-                            json_response(['erro' => 'ID do usuário não fornecido para atualização.'], 400);
-                        }
+                        $id ? $usuarioController->update($id) : json_response(['erro' => 'ID não fornecido para PUT'], 400);
                         break;
                     case 'DELETE':
-                        // DELETE deve ter um ID
-                        if ($id) {
-                            $usuarioController->delete($id);
-                        } else {
-                            json_response(['erro' => 'ID do usuário não fornecido para deleção.'], 400);
-                        }
+                        $id ? $usuarioController->delete($id) : json_response(['erro' => 'ID não fornecido para DELETE'], 400);
                         break;
                     default:
-                        // Se for PATCH, OPTIONS, etc.
-                        json_response(['erro' => 'Método não permitido.'], 405);
+                        json_response(['erro' => 'Método não permitido'], 405);
                 }
                 break; // Fim do 'case usuarios'
 
+            // --- ATUALIZADO: Rota /api/tarefas ---
             case 'tarefas':
-                // (Futuramente, aqui chamará o TarefaController)
-                json_response(['mensagem' => 'Você acessou a rota de TAREFAS (' . $method . ')'], 200);
-                break;
+                $id = isset($path[2]) ? (int)$path[2] : null;
+
+                switch ($method) {
+                    case 'GET':
+                        // GET /api/tarefas/{id} ou GET /api/tarefas
+                        $id ? $tarefaController->getById($id) : $tarefaController->getAll();
+                        break;
+                    case 'POST':
+                        // POST /api/tarefas
+                        $id ? json_response(['erro' => 'POST não permitido com ID'], 400) : $tarefaController->create();
+                        break;
+                    case 'PUT':
+                        // PUT /api/tarefas/{id}
+                        $id ? $tarefaController->update($id) : json_response(['erro' => 'ID não fornecido para PUT'], 400);
+                        break;
+                    case 'PATCH':
+                        // PATCH /api/tarefas/{id}
+                        $id ? $tarefaController->updatePartial($id) : json_response(['erro' => 'ID não fornecido para PATCH'], 400);
+                        break;
+                    case 'DELETE':
+                        // DELETE /api/tarefas/{id}
+                        $id ? $tarefaController->delete($id) : json_response(['erro' => 'ID não fornecido para DELETE'], 400);
+                        break;
+                    default:
+                        json_response(['erro' => 'Método não permitido'], 405);
+                }
+                break; // Fim do 'case tarefas'
 
             default:
                 json_response(['erro' => 'Recurso de API não encontrado'], 404);
