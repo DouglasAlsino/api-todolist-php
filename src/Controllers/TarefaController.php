@@ -18,10 +18,9 @@ class TarefaController {
         $this->tarefaService = $service;
     }
 
-    /**
-     * Manipula GET /api/tarefas
-     * REQUISITO: Permite filtrar por /api/tarefas?status=...
-     */
+   
+     // Manipula GET /api/tarefas
+
     public function getAll() {
         // Pega o filtro da querystring, se existir
         $status = $_GET['status'] ?? null;
@@ -35,9 +34,9 @@ class TarefaController {
         }
     }
 
-    /**
-     * Manipula GET /api/tarefas/{id}
-     */
+    
+     // Manipula GET /api/tarefas/{id}
+     
     public function getById(int $id) {
         try {
             $tarefa = $this->tarefaService->getTarefaById($id);
@@ -48,23 +47,22 @@ class TarefaController {
         }
     }
 
-    /**
-     * Manipula GET /api/usuarios/{id}/tarefas
-     * (Este método é chamado pelo roteador quando a rota bate)
-     */
+   
+     //Manipula GET /api/usuarios/{id}/tarefas
+   
     public function getByUsuarioId(int $usuario_id) {
         try {
             $tarefas = $this->tarefaService->getTarefasByUsuario($usuario_id);
             json_response($tarefas, 200);
         } catch (Exception $e) {
-            // Pega a exceção 404 do Service (se o *usuário* não existir)
+            // Pega a exceção 404 do Service se o *usuário* não existir
             json_response(['erro' => $e->getMessage()], $e->getCode());
         }
     }
 
-    /**
-     * Manipula POST /api/tarefas
-     */
+    
+     // Manipula POST /api/tarefas
+     
     public function create() {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -79,7 +77,7 @@ class TarefaController {
 
         try {
             $novaTarefa = $this->tarefaService->createTarefa($data);
-            json_response($novaTarefa, 201); // 201 Created
+            json_response($novaTarefa, 201);
         } catch (Exception $e) {
             // Pega exceções 404 (usuário não existe) ou 400 (status inválido)
             json_response(['erro' => $e->getMessage()], $e->getCode());
@@ -104,7 +102,7 @@ class TarefaController {
             $tarefaAtualizada = $this->tarefaService->updateTarefa($id, $data);
             json_response($tarefaAtualizada, 200);
         } catch (Exception $e) {
-            // Pega exceções 404, 400
+            
             json_response(['erro' => $e->getMessage()], $e->getCode());
         }
     }
@@ -125,7 +123,7 @@ class TarefaController {
             $tarefaAtualizada = $this->tarefaService->updatePartialTarefa($id, $data);
             json_response($tarefaAtualizada, 200);
         } catch (Exception $e) {
-            // Pega exceções 404, 400
+            
             json_response(['erro' => $e->getMessage()], $e->getCode());
         }
     }
