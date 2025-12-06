@@ -6,20 +6,20 @@ require __DIR__ . '/vendor/autoload.php';
 
 // -------------------------------------------------------------------------
 // IMPORTAÇÃO DAS CLASSES (Use statements)
-// -------------------------------------------------------------------------
+
 use App\Config\Database;
-// --- USUARIO ---
+
 use App\Repositories\UsuarioRepository;
 use App\Services\UsuarioService;
 use App\Controllers\UsuarioController;
-// --- TAREFA (NOVO) ---
+
 use App\Repositories\TarefaRepository;
 use App\Services\TarefaService;
 use App\Controllers\TarefaController;
 
 // -------------------------------------------------------------------------
 // FUNÇÃO HELPER
-// -------------------------------------------------------------------------
+
 function json_response($data = null, $statusCode = 200) {
     header('Content-Type: application/json');
     http_response_code($statusCode);
@@ -31,7 +31,7 @@ function json_response($data = null, $statusCode = 200) {
 
 // -------------------------------------------------------------------------
 // INJEÇÃO DE DEPENDÊNCIA (C-S-R)
-// -------------------------------------------------------------------------
+
 
 // 1. Pega a conexão PDO
 $pdo = Database::getConnection();
@@ -43,14 +43,13 @@ $usuarioController = new UsuarioController($usuarioService);
 
 // 3. Monta as dependências de Tarefa (NOVO)
 $tarefaRepository = new TarefaRepository($pdo);
-// Note que o TarefaService recebe DOIS repositórios
 $tarefaService = new TarefaService($tarefaRepository, $usuarioRepository);
 $tarefaController = new TarefaController($tarefaService);
 
 
 // -------------------------------------------------------------------------
 // CAPTURA DA REQUISIÇÃO
-// -------------------------------------------------------------------------
+
 $method = $_SERVER['REQUEST_METHOD'];
 $path_info = $_GET['path'] ?? '';
 $path = explode('/', trim($path_info, '/'));
@@ -58,11 +57,9 @@ $resource = $path[0];
 
 // -------------------------------------------------------------------------
 // ROTEAMENTO
-// -------------------------------------------------------------------------
 
-// --- NOVO (ROTA RELACIONADA) ---
+
 // Tratamento especial para /api/usuarios/{id}/tarefas
-// $path[0] = 'api', $path[1] = 'usuarios', $path[2] = {id}, $path[3] = 'tarefas'
 if ($resource === 'api' && 
     isset($path[1]) && $path[1] === 'usuarios' && 
     isset($path[2]) && is_numeric($path[2]) && // Garante que o {id} é numérico
@@ -74,17 +71,15 @@ if ($resource === 'api' &&
     } else {
         json_response(['erro' => 'Método não permitido para este endpoint.'], 405);
     }
-    // A execução para aqui, pois já encontramos a rota
     exit;
 }
 
 
-// --- ROTEADOR PRINCIPAL (Atualizado) ---
+// --- ROTEADOR PRINCIPAL ---
 switch ($resource) {
 
     // Rota: / (Apresentação)
     case '':
-        // ... (coloque o código do Passo 3 aqui, com a lista de rotas) ...
         if ($method === 'GET') {
             json_response(['mensagem' => 'API de Tarefas. Acesse a rota / para ver a documentação.'], 200);
         } else {
@@ -101,7 +96,7 @@ switch ($resource) {
             // Rota /api/usuarios
             case 'usuarios':
                 $id = isset($path[2]) ? (int)$path[2] : null;
-                // Evita que a rota /api/usuarios/{id}/tarefas caia aqui
+
                 if (isset($path[3])) { 
                     json_response(['erro' => 'Rota não encontrada.'], 404);
                     break;
@@ -125,7 +120,7 @@ switch ($resource) {
                 }
                 break; // Fim do 'case usuarios'
 
-            // --- ATUALIZADO: Rota /api/tarefas ---
+            //  Rota /api/tarefas ---
             case 'tarefas':
                 $id = isset($path[2]) ? (int)$path[2] : null;
 
