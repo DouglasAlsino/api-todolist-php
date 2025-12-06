@@ -1,7 +1,4 @@
-Entendi — o problema é que **o bloco de código `markdown** (ou qualquer ` ) faz o GitHub tratar tudo como texto literal, sem formatar.
-Vou te enviar **o texto totalmente sem blocos de código**, apenas Markdown puro, exatamente como deve ser colado no README.md.
 
-👉 **Agora é só copiar e colar — vai formatar certinho.**
 
 ---
 
